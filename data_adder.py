@@ -1,80 +1,45 @@
 import os
-import json
 import streamlit as st
-
-FILE_PATH = "./data/raw_posts.json"
-
-# def load_existing_entries():
-#     """Loads existing entries from the JSON file if it exists."""
-#     if os.path.exists(SAVE_PATH):
-#         with open(SAVE_PATH, "r", encoding="utf-8") as f:
-#             try:
-#                 return json.load(f)
-#             except json.JSONDecodeError:
-#                 return []  # Return empty list if JSON is corrupted
-#     return []
-
-# def save_entries_to_json():
-#     """Appends new session state entries to the existing JSON file."""
-#     if not st.session_state.entries:
-#         st.error("No new entries to save!")
-#         return
-
-#     # Load existing data
-#     existing_data = load_existing_entries()
-
-#     # Append new entries
-#     existing_data.extend(st.session_state.entries)
-
-#     # Ensure the directory exists
-#     os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-
-#     # Save the updated list to JSON
-#     with open(SAVE_PATH, "w", encoding="utf-8") as f:
-#         json.dump(existing_data, f, indent=4, ensure_ascii=False)
-
-#     st.success(f"Entries successfully saved to {SAVE_PATH}!")
+from database.models import SessionLocal, UserCaptions
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 
 
+def save_entries_to_database(name,dob):
+    # st.success("Captions submitted successfully!")
+    if name and dob:
+        session: Session=SessionLocal()
+        try:
+            user = session.query(UserCaptions).filter_by(name=name, dob=dob).first()
+            if user:
+                print(user.captions)
+                print(st.session_state.entries)
+                combined_array = user.captions + st.session_state.entries
+                user.captions=combined_array
+                st.success("Captions submitted successfully!")
+            else:
+                user = UserCaptions(
+                    name=name,
+                    dob=dob,
+                    captions=st.session_state.entries,
+                    processed_captions=[]  
+                )
+                session.add(user)
+                session.commit()
+                st.success("Captions submitted successfully!")
+        except SQLAlchemyError as e:
+            session.rollback()
+            st.error(f"An error occurred: {str(e)}")
+        finally:
+            session.close()
+    else:
+        st.error("Please fill in all fields.")
 
 
 
 
-# import streamlit as st
-# import json
-# import os
-
-# # Define the file path for saving JSON data
-# SAVE_PATH = "data/raw_posts.json"
 
 
-def load_existing_entries():
-    """Loads existing entries from the JSON file if it exists."""
-    if os.path.exists(FILE_PATH):
-        with open(FILE_PATH, "r", encoding="utf-8") as f:
-            try:
-                return json.load(f)  # Load existing data
-            except json.JSONDecodeError:
-                return []  # Return empty list if JSON is corrupted
-    return []
-
-def save_entries_to_json():
-    """Appends new session state entries to the existing JSON file while handling Unicode characters properly."""
-    if not st.session_state.entries:
-        st.error("No new entries to save!")
-        return
-
-    # Load existing data
-    existing_data = load_existing_entries()
-
-    # Append new entries
-    existing_data.extend(st.session_state.entries)
-
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
-
-    # Save the updated list to JSON with proper UTF-8 encoding
-    with open(FILE_PATH, "w", encoding="utf-8") as f:
-        json.dump(existing_data, f, indent=4, ensure_ascii=False)
-
-    st.success(f"Entries successfully saved to {FILE_PATH}!")
+        
+        
