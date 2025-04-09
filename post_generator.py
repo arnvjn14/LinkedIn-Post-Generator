@@ -1,7 +1,7 @@
 from llm_helper import llm
 from few_shot import FewShotPosts
 
-few_shot = FewShotPosts()
+# few_shot = FewShotPosts()
 
 
 def get_length_str(length):
@@ -13,14 +13,15 @@ def get_length_str(length):
         return "11 to 15 lines"
 
 
-def generate_post(length, language, tag):
-    prompt = get_prompt(length, language, tag)
+def generate_post(length, language, tag,name,dob):
+    prompt = get_prompt(length, language, tag,name,dob)
     response = llm.invoke(prompt)
     return response.content
 
 
-def get_prompt(length, language, tag):
+def get_prompt(length, language, tag,name,dob):
     length_str = get_length_str(length)
+    few_shot = FewShotPosts(name,dob)
 
     prompt = f'''
     Generate a LinkedIn post using the below information. No preamble.
